@@ -1,0 +1,63 @@
+name: Bug report
+description: A tool doesn't behave as documented.
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! Please search existing issues first.
+        **Never include your API key, signing secret or HTTP token.** For security problems, see SECURITY.md instead.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Tool call
+      description: The tool name and arguments, or the prompt that led to the call.
+      render: json
+    validations:
+      required: true
+  - type: textarea
+    id: error
+    attributes:
+      label: Error or result
+      description: The error the agent saw, or the server's stderr log.
+      render: text
+  - type: input
+    id: server-version
+    attributes:
+      label: dreep-mcp version
+      description: Output of `dreep-mcp --version` (or `uvx dreep-mcp --version`)
+    validations:
+      required: true
+  - type: input
+    id: client
+    attributes:
+      label: MCP client and version
+      placeholder: Claude Desktop 1.4, Cursor 2.1, Codex CLI...
+    validations:
+      required: true
+  - type: dropdown
+    id: runner
+    attributes:
+      label: How it runs
+      options: ["uvx", "npx", "pip install", "from source"]
+    validations:
+      required: true
+  - type: dropdown
+    id: transport
+    attributes:
+      label: Transport
+      options: ["stdio", "streamable HTTP"]
+    validations:
+      required: true
+  - type: input
+    id: python-version
+    attributes:
+      label: Python version and OS
+      placeholder: Python 3.13 on macOS 15

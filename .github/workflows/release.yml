@@ -1,0 +1,97 @@
+name: Release
+
+# Push a tag like v0.1.0 to publish. The tag must match both
+# src/dreep_mcp/_version.py and npm/package.json (scripts/check_versions.py).
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Tag matches both package versions
+        run: python scripts/check_versions.py "$GITHUB_REF_NAME"
+      - name: Quality gate
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e . --group dev
+          bash scripts/quality_gate.sh
+        env:
+          PYTHON: python
+      - name: Build sdist and wheel
+        run: |
+          python -m pip install build twine
+          python -m build
+          python -m twine check --strict dist/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  pypi:
+    name: Publish to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/dreep-mcp/
+    permissions:
+      id-token: write # trusted publishing: PyPI trusts this workflow, no token stored
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
+
+  npm:
+    name: Publish to npm
+    # After PyPI: the launcher runs the PyPI package, so it must exist first.
+    needs: pypi
+    runs-on: ubuntu-latest
+    environment:
+      name: npm
+      url: https://www.npmjs.com/package/dreep-mcp
+    permissions:
+      id-token: write # npm trusted publishing (OIDC) with provenance, no token stored
+    defaults:
+      run:
+        working-directory: npm
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+      - run: npm install -g npm@latest # trusted publishing needs npm 11.5.1+
+      - run: npm test
+      - run: npm publish --provenance --access public
+
+  github-release:
+    name: GitHub Release
+    needs: [pypi, npm]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - name: Create release with the built distributions
+        run: gh release create "$GITHUB_REF_NAME" dist/* --title "$GITHUB_REF_NAME" --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}

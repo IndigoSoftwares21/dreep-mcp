@@ -1,0 +1,38 @@
+{
+  "name": "dreep-mcp",
+  "version": "0.1.0",
+  "description": "The official Dreep MCP server, for npx. Launches the Python package dreep-mcp through uv or pipx.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "dreep-mcp": "bin/dreep-mcp.js"
+  },
+  "files": [
+    "bin",
+    "lib",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test test/"
+  },
+  "keywords": [
+    "dreep",
+    "mcp",
+    "model-context-protocol",
+    "ai",
+    "agents",
+    "media"
+  ],
+  "homepage": "https://github.com/abetoluwani/dreep-mcp#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/abetoluwani/dreep-mcp.git",
+    "directory": "npm"
+  },
+  "bugs": {
+    "url": "https://github.com/abetoluwani/dreep-mcp/issues"
+  }
+}
