@@ -29,7 +29,7 @@ step "Tests (pytest, coverage >= 90%)"
 
 step "npm launcher (node --test)"
 if command -v node >/dev/null 2>&1; then
-  node --test npm/test/
+  node --test npm/test/*.test.js
 else
   echo "node not found: skipping (CI runs it)."
 fi
