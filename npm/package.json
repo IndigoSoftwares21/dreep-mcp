@@ -26,13 +26,13 @@
     "agents",
     "media"
   ],
-  "homepage": "https://github.com/abetoluwani/dreep-mcp#readme",
+  "homepage": "https://github.com/IndigoSoftwares21/dreep-mcp#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/abetoluwani/dreep-mcp.git",
+    "url": "git+https://github.com/IndigoSoftwares21/dreep-mcp.git",
     "directory": "npm"
   },
   "bugs": {
-    "url": "https://github.com/abetoluwani/dreep-mcp/issues"
+    "url": "https://github.com/IndigoSoftwares21/dreep-mcp/issues"
   }
 }

@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/abetoluwani/dreep-mcp/main/.github/assets/dreep-logo.svg" alt="Dreep" width="64" height="71">
+<img src="https://raw.githubusercontent.com/IndigoSoftwares21/dreep-mcp/main/.github/assets/dreep-logo.svg" alt="Dreep" width="64" height="71">
 
 # Contributing to the Dreep MCP server
 
@@ -32,14 +32,14 @@ merged without review.
 
 ## 1. Start with an issue
 
-- **Found a bug?** Search the [open issues](https://github.com/abetoluwani/dreep-mcp/issues)
-  first. If it isn't there, [file a bug report](https://github.com/abetoluwani/dreep-mcp/issues/new?template=bug_report.yml)
+- **Found a bug?** Search the [open issues](https://github.com/IndigoSoftwares21/dreep-mcp/issues)
+  first. If it isn't there, [file a bug report](https://github.com/IndigoSoftwares21/dreep-mcp/issues/new?template=bug_report.yml)
   with the server version, your MCP client, and the tool call that shows the problem.
-- **Want a feature?** [Open a feature request](https://github.com/abetoluwani/dreep-mcp/issues/new?template=feature_request.yml)
+- **Want a feature?** [Open a feature request](https://github.com/IndigoSoftwares21/dreep-mcp/issues/new?template=feature_request.yml)
   that describes the problem you're trying to solve, not only the solution you have in mind.
 - **Want to help but don't have an idea?** Look for issues labelled
-  [`good first issue`](https://github.com/abetoluwani/dreep-mcp/labels/good%20first%20issue)
-  or [`help wanted`](https://github.com/abetoluwani/dreep-mcp/labels/help%20wanted).
+  [`good first issue`](https://github.com/IndigoSoftwares21/dreep-mcp/labels/good%20first%20issue)
+  or [`help wanted`](https://github.com/IndigoSoftwares21/dreep-mcp/labels/help%20wanted).
 
 Comment on the issue to say you'd like to take it, and wait until a maintainer assigns it
 to you before you start. That way two people don't build the same thing, and the approach
@@ -52,7 +52,7 @@ is agreed before you write code.
 ## 2. Set up your environment
 
 ```bash
-gh repo fork abetoluwani/dreep-mcp --clone   # or: git clone, if you're a collaborator
+gh repo fork IndigoSoftwares21/dreep-mcp --clone   # or: git clone, if you're a collaborator
 cd dreep-mcp
 bash scripts/setup_hooks.sh
 ```
@@ -208,5 +208,5 @@ Keep each PR focused on its issue. Unrelated clean-ups belong in their own issue
 ## Getting help
 
 Ask on the issue you're working on, or open a
-[discussion issue](https://github.com/abetoluwani/dreep-mcp/issues/new). For
+[discussion issue](https://github.com/IndigoSoftwares21/dreep-mcp/issues/new). For
 questions about the Dreep API itself, see the [Dreep docs](https://docs.dreep.cloud).

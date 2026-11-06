@@ -26,4 +26,4 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 Every option and argument is passed through, for example `npx -y dreep-mcp --transport http`.
 
 Full documentation, the tool list and setup for Claude, Cursor, VS Code, Codex, Gemini and
-other clients: **https://github.com/abetoluwani/dreep-mcp**
+other clients: **https://github.com/IndigoSoftwares21/dreep-mcp**
