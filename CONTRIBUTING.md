@@ -91,7 +91,8 @@ git switch -c feature/42-video-thumbnail-tool
 | `src/dreep_mcp/_server.py` | Builds the server and registers the tool groups |
 | `src/dreep_mcp/_cli.py` | The command and the stdio and HTTP transports |
 | `src/dreep_mcp/_constants.py` | Every value that affects behaviour |
-| `npm/` | The `npx` launcher (Node, no dependencies) |
+| `npm/src/tools*.ts` | The Node server's tools, one module per group |
+| `npm/contract/tools.json` | Generated from the Python server. **Never edit by hand.** |
 | `tests/` | Tests, through a real MCP client against a mocked Dreep API (no network) |
 | `scripts/rules/` | The repository rules (one file per rule) |
 
@@ -111,7 +112,9 @@ git switch -c feature/42-video-thumbnail-tool
    enforces. That docstring is the tool description the model reads.
 5. Add tests in `tests/test_tools_*.py` that call it through the MCP client, and update
    the tool count in `tests/test_server.py`.
-6. Document it in the README's tool table and add a line under **Unreleased** in
+6. Run `.venv/bin/python scripts/export_contract.py`, add the handler to the matching
+   `npm/src/tools*.ts`, and test it in `npm/test/`. Update the tool count in the Node tests.
+7. Document it in the README's tool table and add a line under **Unreleased** in
    `CHANGELOG.md`.
 
 ### House rules
@@ -138,7 +141,7 @@ It runs, in order:
 2. Repository rules
 3. `mypy --strict`
 4. pytest, with coverage of at least 90%
-5. The npm launcher's tests (`node --test`)
+5. The Node server's type check and tests, with coverage of at least 90%
 
 The pre-commit hook runs the same gate, and so does CI.
 
@@ -185,7 +188,7 @@ Keep each PR focused on its issue. Unrelated clean-ups belong in their own issue
 
 - Both maintainers review. Answer each comment with either a change or a reply, then
   re-request review.
-- CI must be green: the quality gate on Python 3.10 to 3.14, the npm launcher tests, plus the issue-link check.
+- CI must be green: the quality gate on Python 3.10 to 3.14, the Node server on Node 20 to 24, plus the issue-link check.
 - After **both maintainers approve**, a maintainer squash-merges the PR. The squashed
   commit keeps your Conventional Commit title.
 - Don't push directly to `main` or rewrite its history. The pre-push hook blocks both.
@@ -202,7 +205,7 @@ Keep each PR focused on its issue. Unrelated clean-ups belong in their own issue
    git push origin vX.Y.Z
    ```
 4. The release workflow tests and builds the package, publishes it to PyPI, publishes the
-   launcher to npm (both with trusted publishing, no stored tokens), and creates the
+   Node server to npm (both with trusted publishing, no stored tokens), and creates the
    GitHub Release.
 
 ## Getting help

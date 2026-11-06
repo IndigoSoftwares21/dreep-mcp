@@ -1,0 +1,2831 @@
+{
+  "instructions": "Dreep stores, transforms and delivers images, videos, audio and documents.\n\n- Upload with upload_file (a local path, or base64 content). The result's `url`\n  is the delivery URL; always use URLs exactly as Dreep returns them, never\n  build one by hand (projects can be on a custom CDN domain).\n- To resize, crop, convert or compress, call build_delivery_url with a\n  transform. Nothing is re-uploaded: the CDN transforms on the fly.\n- For assets in signed folders, use build_signed_url.\n- remove_background, extract_text (OCR) and convert_document each take a file.\n- Folders and presets organise the project; get_usage reports storage.\n- Delete tools exist only when the server sets DREEP_MCP_ALLOW_DELETE; deletes\n  are permanent, so confirm with the user first.\n",
+  "limits": {
+    "maxInlineBytes": 20971520,
+    "presignedThresholdBytes": 104857600
+  },
+  "serverName": "dreep",
+  "serverTitle": "Dreep",
+  "tools": [
+    {
+      "annotations": {
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "description": "Builds a delivery URL that resizes, crops, converts or otherwise transforms an asset.\n\nTransforms run on the fly at the CDN and are cached. Example: width 400 and\nformat webp for a thumbnail; format pdf to convert a Word document.\n",
+      "inputSchema": {
+        "$defs": {
+          "TransformInput": {
+            "additionalProperties": false,
+            "description": "Image, video and document transform. Every field is optional.",
+            "properties": {
+              "bg": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Background hex colour without '#': fff, ffffff or ffffffcc.",
+                "title": "Bg"
+              },
+              "blur": {
+                "anyOf": [
+                  {
+                    "maximum": 100,
+                    "minimum": 0.3,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Gaussian blur sigma, 0.3-100.",
+                "title": "Blur"
+              },
+              "crop": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Explicit crop as 'left,top,width,height'.",
+                "title": "Crop"
+              },
+              "dpr": {
+                "anyOf": [
+                  {
+                    "exclusiveMinimum": 0,
+                    "maximum": 3,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Device pixel ratio, max 3.",
+                "title": "Dpr"
+              },
+              "fit": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "cover",
+                      "contain",
+                      "fill",
+                      "inside",
+                      "outside"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "How the image fits width x height.",
+                "title": "Fit"
+              },
+              "format": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "jpeg",
+                      "jpg",
+                      "png",
+                      "webp",
+                      "avif",
+                      "gif",
+                      "tiff",
+                      "heic",
+                      "heif"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "mp4",
+                      "webm",
+                      "mov",
+                      "hls",
+                      "m3u8",
+                      "gif"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "mp3",
+                      "wav",
+                      "aac"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "txt",
+                      "text"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "pdf",
+                      "docx",
+                      "odt",
+                      "rtf",
+                      "xlsx",
+                      "ods",
+                      "csv",
+                      "pptx",
+                      "odp"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Output format. Image: jpeg, png, webp, avif, gif, tiff, heic. Video: mp4, webm, mov, hls, gif. Audio: mp3, wav, aac. Documents: pdf, docx, xlsx, pptx, csv...",
+                "title": "Format"
+              },
+              "fps": {
+                "anyOf": [
+                  {
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Video frames per second.",
+                "title": "Fps"
+              },
+              "gravity": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "center",
+                      "north",
+                      "northeast",
+                      "east",
+                      "southeast",
+                      "south",
+                      "southwest",
+                      "west",
+                      "northwest",
+                      "attention",
+                      "entropy"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Crop anchor when resizing.",
+                "title": "Gravity"
+              },
+              "height": {
+                "anyOf": [
+                  {
+                    "maximum": 4000,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Height in pixels, max 4000.",
+                "title": "Height"
+              },
+              "page": {
+                "anyOf": [
+                  {
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "PDF page to render as png/jpeg.",
+                "title": "Page"
+              },
+              "preset": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Key of a saved preset, applied instead.",
+                "title": "Preset"
+              },
+              "quality": {
+                "anyOf": [
+                  {
+                    "maximum": 100,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Compression quality, 1-100.",
+                "title": "Quality"
+              },
+              "radius": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "const": "max",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Corner radius in pixels, or 'max' for a circle or pill.",
+                "title": "Radius"
+              },
+              "rotate": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      90,
+                      180,
+                      270
+                    ],
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Rotation in degrees.",
+                "title": "Rotate"
+              },
+              "trim_end": {
+                "anyOf": [
+                  {
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Video trim end, seconds.",
+                "title": "Trim End"
+              },
+              "trim_start": {
+                "anyOf": [
+                  {
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Video trim start, seconds.",
+                "title": "Trim Start"
+              },
+              "video_codec": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "h264",
+                      "vp8",
+                      "vp9",
+                      "hevc"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Video codec.",
+                "title": "Video Codec"
+              },
+              "width": {
+                "anyOf": [
+                  {
+                    "maximum": 4000,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Width in pixels, max 4000.",
+                "title": "Width"
+              }
+            },
+            "title": "TransformInput",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "transform": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/TransformInput"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Transform to apply. On upload it runs before storage."
+          },
+          "url": {
+            "description": "The asset's delivery URL exactly as Dreep returned it (from upload/list).",
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "title": "build_delivery_urlArguments",
+        "type": "object"
+      },
+      "name": "build_delivery_url"
+    },
+    {
+      "annotations": {
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "readOnlyHint": true
+      },
+      "description": "Builds a time-limited URL for an asset in a signed folder.\n\nNeeds DREEP_SIGNING_SECRET on the server. Anyone holding the link can fetch the\nasset until it expires, so share it only with the intended recipient.\n",
+      "inputSchema": {
+        "$defs": {
+          "TransformInput": {
+            "additionalProperties": false,
+            "description": "Image, video and document transform. Every field is optional.",
+            "properties": {
+              "bg": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Background hex colour without '#': fff, ffffff or ffffffcc.",
+                "title": "Bg"
+              },
+              "blur": {
+                "anyOf": [
+                  {
+                    "maximum": 100,
+                    "minimum": 0.3,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Gaussian blur sigma, 0.3-100.",
+                "title": "Blur"
+              },
+              "crop": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Explicit crop as 'left,top,width,height'.",
+                "title": "Crop"
+              },
+              "dpr": {
+                "anyOf": [
+                  {
+                    "exclusiveMinimum": 0,
+                    "maximum": 3,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Device pixel ratio, max 3.",
+                "title": "Dpr"
+              },
+              "fit": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "cover",
+                      "contain",
+                      "fill",
+                      "inside",
+                      "outside"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "How the image fits width x height.",
+                "title": "Fit"
+              },
+              "format": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "jpeg",
+                      "jpg",
+                      "png",
+                      "webp",
+                      "avif",
+                      "gif",
+                      "tiff",
+                      "heic",
+                      "heif"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "mp4",
+                      "webm",
+                      "mov",
+                      "hls",
+                      "m3u8",
+                      "gif"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "mp3",
+                      "wav",
+                      "aac"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "txt",
+                      "text"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "pdf",
+                      "docx",
+                      "odt",
+                      "rtf",
+                      "xlsx",
+                      "ods",
+                      "csv",
+                      "pptx",
+                      "odp"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Output format. Image: jpeg, png, webp, avif, gif, tiff, heic. Video: mp4, webm, mov, hls, gif. Audio: mp3, wav, aac. Documents: pdf, docx, xlsx, pptx, csv...",
+                "title": "Format"
+              },
+              "fps": {
+                "anyOf": [
+                  {
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Video frames per second.",
+                "title": "Fps"
+              },
+              "gravity": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "center",
+                      "north",
+                      "northeast",
+                      "east",
+                      "southeast",
+                      "south",
+                      "southwest",
+                      "west",
+                      "northwest",
+                      "attention",
+                      "entropy"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Crop anchor when resizing.",
+                "title": "Gravity"
+              },
+              "height": {
+                "anyOf": [
+                  {
+                    "maximum": 4000,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Height in pixels, max 4000.",
+                "title": "Height"
+              },
+              "page": {
+                "anyOf": [
+                  {
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "PDF page to render as png/jpeg.",
+                "title": "Page"
+              },
+              "preset": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Key of a saved preset, applied instead.",
+                "title": "Preset"
+              },
+              "quality": {
+                "anyOf": [
+                  {
+                    "maximum": 100,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Compression quality, 1-100.",
+                "title": "Quality"
+              },
+              "radius": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "const": "max",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Corner radius in pixels, or 'max' for a circle or pill.",
+                "title": "Radius"
+              },
+              "rotate": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      90,
+                      180,
+                      270
+                    ],
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Rotation in degrees.",
+                "title": "Rotate"
+              },
+              "trim_end": {
+                "anyOf": [
+                  {
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Video trim end, seconds.",
+                "title": "Trim End"
+              },
+              "trim_start": {
+                "anyOf": [
+                  {
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Video trim start, seconds.",
+                "title": "Trim Start"
+              },
+              "video_codec": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "h264",
+                      "vp8",
+                      "vp9",
+                      "hevc"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Video codec.",
+                "title": "Video Codec"
+              },
+              "width": {
+                "anyOf": [
+                  {
+                    "maximum": 4000,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Width in pixels, max 4000.",
+                "title": "Width"
+              }
+            },
+            "title": "TransformInput",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "asset_id": {
+            "description": "The asset's `id`; this is what is signed.",
+            "title": "Asset Id",
+            "type": "string"
+          },
+          "expires_in_seconds": {
+            "description": "Seconds until the link stops working.",
+            "minimum": 1,
+            "title": "Expires In Seconds",
+            "type": "integer"
+          },
+          "transform": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/TransformInput"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Transform to apply. On upload it runs before storage."
+          },
+          "url": {
+            "description": "The asset's delivery URL exactly as Dreep returned it (from upload/list).",
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "asset_id",
+          "url",
+          "expires_in_seconds"
+        ],
+        "title": "build_signed_urlArguments",
+        "type": "object"
+      },
+      "name": "build_signed_url"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true,
+        "readOnlyHint": false
+      },
+      "description": "Finalises a presigned upload once its bytes are in storage; returns the asset.\n\nA conflict error means the bytes haven't landed yet: retry this call, not the PUT.\n",
+      "inputSchema": {
+        "$defs": {
+          "TransformInput": {
+            "additionalProperties": false,
+            "description": "Image, video and document transform. Every field is optional.",
+            "properties": {
+              "bg": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Background hex colour without '#': fff, ffffff or ffffffcc.",
+                "title": "Bg"
+              },
+              "blur": {
+                "anyOf": [
+                  {
+                    "maximum": 100,
+                    "minimum": 0.3,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Gaussian blur sigma, 0.3-100.",
+                "title": "Blur"
+              },
+              "crop": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Explicit crop as 'left,top,width,height'.",
+                "title": "Crop"
+              },
+              "dpr": {
+                "anyOf": [
+                  {
+                    "exclusiveMinimum": 0,
+                    "maximum": 3,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Device pixel ratio, max 3.",
+                "title": "Dpr"
+              },
+              "fit": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "cover",
+                      "contain",
+                      "fill",
+                      "inside",
+                      "outside"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "How the image fits width x height.",
+                "title": "Fit"
+              },
+              "format": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "jpeg",
+                      "jpg",
+                      "png",
+                      "webp",
+                      "avif",
+                      "gif",
+                      "tiff",
+                      "heic",
+                      "heif"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "mp4",
+                      "webm",
+                      "mov",
+                      "hls",
+                      "m3u8",
+                      "gif"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "mp3",
+                      "wav",
+                      "aac"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "txt",
+                      "text"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "pdf",
+                      "docx",
+                      "odt",
+                      "rtf",
+                      "xlsx",
+                      "ods",
+                      "csv",
+                      "pptx",
+                      "odp"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Output format. Image: jpeg, png, webp, avif, gif, tiff, heic. Video: mp4, webm, mov, hls, gif. Audio: mp3, wav, aac. Documents: pdf, docx, xlsx, pptx, csv...",
+                "title": "Format"
+              },
+              "fps": {
+                "anyOf": [
+                  {
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Video frames per second.",
+                "title": "Fps"
+              },
+              "gravity": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "center",
+                      "north",
+                      "northeast",
+                      "east",
+                      "southeast",
+                      "south",
+                      "southwest",
+                      "west",
+                      "northwest",
+                      "attention",
+                      "entropy"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Crop anchor when resizing.",
+                "title": "Gravity"
+              },
+              "height": {
+                "anyOf": [
+                  {
+                    "maximum": 4000,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Height in pixels, max 4000.",
+                "title": "Height"
+              },
+              "page": {
+                "anyOf": [
+                  {
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "PDF page to render as png/jpeg.",
+                "title": "Page"
+              },
+              "preset": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Key of a saved preset, applied instead.",
+                "title": "Preset"
+              },
+              "quality": {
+                "anyOf": [
+                  {
+                    "maximum": 100,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Compression quality, 1-100.",
+                "title": "Quality"
+              },
+              "radius": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "const": "max",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Corner radius in pixels, or 'max' for a circle or pill.",
+                "title": "Radius"
+              },
+              "rotate": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      90,
+                      180,
+                      270
+                    ],
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Rotation in degrees.",
+                "title": "Rotate"
+              },
+              "trim_end": {
+                "anyOf": [
+                  {
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Video trim end, seconds.",
+                "title": "Trim End"
+              },
+              "trim_start": {
+                "anyOf": [
+                  {
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Video trim start, seconds.",
+                "title": "Trim Start"
+              },
+              "video_codec": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "h264",
+                      "vp8",
+                      "vp9",
+                      "hevc"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Video codec.",
+                "title": "Video Codec"
+              },
+              "width": {
+                "anyOf": [
+                  {
+                    "maximum": 4000,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Width in pixels, max 4000.",
+                "title": "Width"
+              }
+            },
+            "title": "TransformInput",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "preset_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Key of a saved preset to apply instead of 'transform'.",
+            "title": "Preset Key"
+          },
+          "transform": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/TransformInput"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Transform to apply. On upload it runs before storage."
+          },
+          "upload_id": {
+            "description": "The `id` create_upload_url returned.",
+            "title": "Upload Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "upload_id"
+        ],
+        "title": "confirm_uploadArguments",
+        "type": "object"
+      },
+      "name": "confirm_upload"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true,
+        "readOnlyHint": false
+      },
+      "description": "Converts a document (Word to PDF, PDF to Word, a PDF page to an image...).\n\nStored as a new asset. If `status` is 'processing', the `url` answers 202\nuntil the conversion finishes.\n",
+      "inputSchema": {
+        "properties": {
+          "auto_create_folders": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "False to require the folder path to exist already.",
+            "title": "Auto Create Folders"
+          },
+          "content_base64": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "File content, base64-encoded (20 MB max). Requires filename.",
+            "title": "Content Base64"
+          },
+          "filename": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filename to store, e.g. 'hero.jpg'. Defaults to the path's name.",
+            "title": "Filename"
+          },
+          "folder": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Destination folder slug path, e.g. 'marketing/2026'. Created if missing.",
+            "title": "Folder"
+          },
+          "folder_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "UUID of an existing destination folder.",
+            "title": "Folder Id"
+          },
+          "format": {
+            "description": "Target format, e.g. pdf or docx.",
+            "enum": [
+              "pdf",
+              "docx",
+              "odt",
+              "rtf",
+              "xlsx",
+              "ods",
+              "csv",
+              "pptx",
+              "odp",
+              "png",
+              "jpeg"
+            ],
+            "title": "Format",
+            "type": "string"
+          },
+          "key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Full object key (folder path + filename). Excludes folder/folder_id.",
+            "title": "Key"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "PDF page to render, for png/jpeg output.",
+            "title": "Page"
+          },
+          "path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Path of a local file to send. Give this or content_base64, not both.",
+            "title": "Path"
+          }
+        },
+        "required": [
+          "format"
+        ],
+        "title": "convert_documentArguments",
+        "type": "object"
+      },
+      "name": "convert_document"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true,
+        "readOnlyHint": false
+      },
+      "description": "Creates a folder. Uploads create folders on demand, so this is mainly for\nsetting access control before anything lands.\n\nAccess control can only be set on a top-level folder (name, no parent);\nnested folders inherit it. Folders cannot be deleted through the API.\n",
+      "inputSchema": {
+        "properties": {
+          "access_control_type": {
+            "anyOf": [
+              {
+                "enum": [
+                  "public",
+                  "private",
+                  "signed"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "public, private or signed. Top-level folders only.",
+            "title": "Access Control Type"
+          },
+          "default_expiry_seconds": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Default signed-link lifetime, seconds.",
+            "title": "Default Expiry Seconds"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Create one folder by name.",
+            "title": "Name"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Parent folder UUID.",
+            "title": "Parent Id"
+          },
+          "parent_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Parent folder slug path.",
+            "title": "Parent Path"
+          },
+          "path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Or create a whole chain, e.g. 'clients/acme/logos'.",
+            "title": "Path"
+          }
+        },
+        "title": "create_folderArguments",
+        "type": "object"
+      },
+      "name": "create_folder"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true,
+        "readOnlyHint": false
+      },
+      "description": "Saves a named transform, applied anywhere with transform `preset`: key.",
+      "inputSchema": {
+        "$defs": {
+          "TransformInput": {
+            "additionalProperties": false,
+            "description": "Image, video and document transform. Every field is optional.",
+            "properties": {
+              "bg": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Background hex colour without '#': fff, ffffff or ffffffcc.",
+                "title": "Bg"
+              },
+              "blur": {
+                "anyOf": [
+                  {
+                    "maximum": 100,
+                    "minimum": 0.3,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Gaussian blur sigma, 0.3-100.",
+                "title": "Blur"
+              },
+              "crop": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Explicit crop as 'left,top,width,height'.",
+                "title": "Crop"
+              },
+              "dpr": {
+                "anyOf": [
+                  {
+                    "exclusiveMinimum": 0,
+                    "maximum": 3,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Device pixel ratio, max 3.",
+                "title": "Dpr"
+              },
+              "fit": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "cover",
+                      "contain",
+                      "fill",
+                      "inside",
+                      "outside"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "How the image fits width x height.",
+                "title": "Fit"
+              },
+              "format": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "jpeg",
+                      "jpg",
+                      "png",
+                      "webp",
+                      "avif",
+                      "gif",
+                      "tiff",
+                      "heic",
+                      "heif"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "mp4",
+                      "webm",
+                      "mov",
+                      "hls",
+                      "m3u8",
+                      "gif"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "mp3",
+                      "wav",
+                      "aac"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "txt",
+                      "text"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "pdf",
+                      "docx",
+                      "odt",
+                      "rtf",
+                      "xlsx",
+                      "ods",
+                      "csv",
+                      "pptx",
+                      "odp"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Output format. Image: jpeg, png, webp, avif, gif, tiff, heic. Video: mp4, webm, mov, hls, gif. Audio: mp3, wav, aac. Documents: pdf, docx, xlsx, pptx, csv...",
+                "title": "Format"
+              },
+              "fps": {
+                "anyOf": [
+                  {
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Video frames per second.",
+                "title": "Fps"
+              },
+              "gravity": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "center",
+                      "north",
+                      "northeast",
+                      "east",
+                      "southeast",
+                      "south",
+                      "southwest",
+                      "west",
+                      "northwest",
+                      "attention",
+                      "entropy"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Crop anchor when resizing.",
+                "title": "Gravity"
+              },
+              "height": {
+                "anyOf": [
+                  {
+                    "maximum": 4000,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Height in pixels, max 4000.",
+                "title": "Height"
+              },
+              "page": {
+                "anyOf": [
+                  {
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "PDF page to render as png/jpeg.",
+                "title": "Page"
+              },
+              "preset": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Key of a saved preset, applied instead.",
+                "title": "Preset"
+              },
+              "quality": {
+                "anyOf": [
+                  {
+                    "maximum": 100,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Compression quality, 1-100.",
+                "title": "Quality"
+              },
+              "radius": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "const": "max",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Corner radius in pixels, or 'max' for a circle or pill.",
+                "title": "Radius"
+              },
+              "rotate": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      90,
+                      180,
+                      270
+                    ],
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Rotation in degrees.",
+                "title": "Rotate"
+              },
+              "trim_end": {
+                "anyOf": [
+                  {
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Video trim end, seconds.",
+                "title": "Trim End"
+              },
+              "trim_start": {
+                "anyOf": [
+                  {
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Video trim start, seconds.",
+                "title": "Trim Start"
+              },
+              "video_codec": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "h264",
+                      "vp8",
+                      "vp9",
+                      "hevc"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Video codec.",
+                "title": "Video Codec"
+              },
+              "width": {
+                "anyOf": [
+                  {
+                    "maximum": 4000,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Width in pixels, max 4000.",
+                "title": "Width"
+              }
+            },
+            "title": "TransformInput",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "key": {
+            "description": "Lowercase letters, digits, _.",
+            "pattern": "^[a-z0-9_]+$",
+            "title": "Key",
+            "type": "string"
+          },
+          "name": {
+            "description": "Human-readable name.",
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "transform": {
+            "$ref": "#/$defs/TransformInput",
+            "description": "Must include `format`."
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "transform"
+        ],
+        "title": "create_presetArguments",
+        "type": "object"
+      },
+      "name": "create_preset"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true,
+        "readOnlyHint": false
+      },
+      "description": "Starts a direct-to-storage upload for bytes this server can't read.\n\nPUT the file to `upload_url` with exactly this Content-Type and Content-Length\n(valid about ten minutes), then call confirm_upload with the returned `id`.\nIf `already_exists` is true, skip the PUT and confirm straight away.\n",
+      "inputSchema": {
+        "properties": {
+          "auto_create_folders": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "False to require the folder path to exist already.",
+            "title": "Auto Create Folders"
+          },
+          "content_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Hex SHA-256 of the file; skips the upload if Dreep has it.",
+            "title": "Content Hash"
+          },
+          "content_type": {
+            "description": "MIME type of the file, e.g. video/mp4.",
+            "title": "Content Type",
+            "type": "string"
+          },
+          "filename": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filename to store, e.g. 'hero.jpg'. Defaults to the path's name.",
+            "title": "Filename"
+          },
+          "folder": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Destination folder slug path, e.g. 'marketing/2026'. Created if missing.",
+            "title": "Folder"
+          },
+          "folder_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "UUID of an existing destination folder.",
+            "title": "Folder Id"
+          },
+          "key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Full object key (folder path + filename). Excludes folder/folder_id.",
+            "title": "Key"
+          },
+          "size_bytes": {
+            "description": "Exact size of the file in bytes.",
+            "minimum": 1,
+            "title": "Size Bytes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "content_type",
+          "size_bytes"
+        ],
+        "title": "create_upload_urlArguments",
+        "type": "object"
+      },
+      "name": "create_upload_url"
+    },
+    {
+      "annotations": {
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": true,
+        "readOnlyHint": false
+      },
+      "description": "Permanently deletes an asset and every cached transform of it.\n\nImmediate and irreversible: URLs already handed out, signed ones included,\nstop working. Confirm with the user first.\n",
+      "inputSchema": {
+        "properties": {
+          "media_id": {
+            "description": "The asset's `id`.",
+            "title": "Media Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "media_id"
+        ],
+        "title": "delete_mediaArguments",
+        "type": "object"
+      },
+      "name": "delete_media"
+    },
+    {
+      "annotations": {
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": true,
+        "readOnlyHint": false
+      },
+      "description": "Deletes a preset. URLs still using its key start failing. Confirm first.",
+      "inputSchema": {
+        "properties": {
+          "preset_id": {
+            "description": "The preset's `id` (not its key).",
+            "title": "Preset Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "preset_id"
+        ],
+        "title": "delete_presetArguments",
+        "type": "object"
+      },
+      "name": "delete_preset"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true,
+        "readOnlyHint": false
+      },
+      "description": "Runs OCR on an image or PDF and returns the extracted `text`.",
+      "inputSchema": {
+        "properties": {
+          "auto_create_folders": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "False to require the folder path to exist already.",
+            "title": "Auto Create Folders"
+          },
+          "content_base64": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "File content, base64-encoded (20 MB max). Requires filename.",
+            "title": "Content Base64"
+          },
+          "filename": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filename to store, e.g. 'hero.jpg'. Defaults to the path's name.",
+            "title": "Filename"
+          },
+          "folder": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Also store the text as a .txt asset in this folder.",
+            "title": "Folder"
+          },
+          "folder_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "UUID of an existing destination folder.",
+            "title": "Folder Id"
+          },
+          "include_blocks": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Also return line blocks with bounding boxes.",
+            "title": "Include Blocks"
+          },
+          "path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Path of a local file to send. Give this or content_base64, not both.",
+            "title": "Path"
+          }
+        },
+        "title": "extract_textArguments",
+        "type": "object"
+      },
+      "name": "extract_text"
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Storage consumed and image, file and folder counts for the project.",
+      "inputSchema": {
+        "properties": {},
+        "title": "get_usageArguments",
+        "type": "object"
+      },
+      "name": "get_usage"
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Lists folders with their full paths and access control. With no filter,\nreturns every folder at any depth.",
+      "inputSchema": {
+        "properties": {
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Or this folder's, by UUID.",
+            "title": "Parent Id"
+          },
+          "path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "List this folder's children.",
+            "title": "Path"
+          },
+          "root_only": {
+            "default": false,
+            "description": "Only top-level folders.",
+            "title": "Root Only",
+            "type": "boolean"
+          }
+        },
+        "title": "list_foldersArguments",
+        "type": "object"
+      },
+      "name": "list_folders"
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Lists ready assets, newest first, with `pagination.total` across all pages.\n\nEach asset has `id`, `url`, `filename`, `mimetype`, `size_bytes` and `folder`.\nThere is no text search: page through and filter by filename or folder.\n",
+      "inputSchema": {
+        "properties": {
+          "folder": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Only assets in this folder slug path, which must exist.",
+            "title": "Folder"
+          },
+          "folder_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Only assets in this folder.",
+            "title": "Folder Id"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Assets per page.",
+            "title": "Limit"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Page number, from 1.",
+            "title": "Page"
+          },
+          "recursive": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Include assets in subfolders of the folder.",
+            "title": "Recursive"
+          }
+        },
+        "title": "list_mediaArguments",
+        "type": "object"
+      },
+      "name": "list_media"
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Lists every saved preset with its `id`, `key`, `name` and `params`.",
+      "inputSchema": {
+        "properties": {},
+        "title": "list_presetsArguments",
+        "type": "object"
+      },
+      "name": "list_presets"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true,
+        "readOnlyHint": false
+      },
+      "description": "Cuts the subject out of an image and stores the transparent cutout.\n\nTo show it on a colour, build a delivery URL with transform `bg`, e.g. 'ffffff'.\n",
+      "inputSchema": {
+        "properties": {
+          "auto_create_folders": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "False to require the folder path to exist already.",
+            "title": "Auto Create Folders"
+          },
+          "content_base64": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "File content, base64-encoded (20 MB max). Requires filename.",
+            "title": "Content Base64"
+          },
+          "filename": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filename to store, e.g. 'hero.jpg'. Defaults to the path's name.",
+            "title": "Filename"
+          },
+          "folder": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Destination folder slug path, e.g. 'marketing/2026'. Created if missing.",
+            "title": "Folder"
+          },
+          "folder_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "UUID of an existing destination folder.",
+            "title": "Folder Id"
+          },
+          "format": {
+            "anyOf": [
+              {
+                "enum": [
+                  "png",
+                  "webp"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "png or webp; both keep the alpha channel.",
+            "title": "Format"
+          },
+          "path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Path of a local file to send. Give this or content_base64, not both.",
+            "title": "Path"
+          }
+        },
+        "title": "remove_backgroundArguments",
+        "type": "object"
+      },
+      "name": "remove_background"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true,
+        "readOnlyHint": false
+      },
+      "description": "Uploads an image, video, audio file or document to Dreep and returns the asset.\n\nThe result's `url` is the ready-to-use delivery URL. Files over 100 MB stream\nstraight to storage through a presigned upload. A transform given here is\napplied before storage and replaces the original.\n",
+      "inputSchema": {
+        "$defs": {
+          "TransformInput": {
+            "additionalProperties": false,
+            "description": "Image, video and document transform. Every field is optional.",
+            "properties": {
+              "bg": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Background hex colour without '#': fff, ffffff or ffffffcc.",
+                "title": "Bg"
+              },
+              "blur": {
+                "anyOf": [
+                  {
+                    "maximum": 100,
+                    "minimum": 0.3,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Gaussian blur sigma, 0.3-100.",
+                "title": "Blur"
+              },
+              "crop": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Explicit crop as 'left,top,width,height'.",
+                "title": "Crop"
+              },
+              "dpr": {
+                "anyOf": [
+                  {
+                    "exclusiveMinimum": 0,
+                    "maximum": 3,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Device pixel ratio, max 3.",
+                "title": "Dpr"
+              },
+              "fit": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "cover",
+                      "contain",
+                      "fill",
+                      "inside",
+                      "outside"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "How the image fits width x height.",
+                "title": "Fit"
+              },
+              "format": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "jpeg",
+                      "jpg",
+                      "png",
+                      "webp",
+                      "avif",
+                      "gif",
+                      "tiff",
+                      "heic",
+                      "heif"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "mp4",
+                      "webm",
+                      "mov",
+                      "hls",
+                      "m3u8",
+                      "gif"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "mp3",
+                      "wav",
+                      "aac"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "txt",
+                      "text"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "pdf",
+                      "docx",
+                      "odt",
+                      "rtf",
+                      "xlsx",
+                      "ods",
+                      "csv",
+                      "pptx",
+                      "odp"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Output format. Image: jpeg, png, webp, avif, gif, tiff, heic. Video: mp4, webm, mov, hls, gif. Audio: mp3, wav, aac. Documents: pdf, docx, xlsx, pptx, csv...",
+                "title": "Format"
+              },
+              "fps": {
+                "anyOf": [
+                  {
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Video frames per second.",
+                "title": "Fps"
+              },
+              "gravity": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "center",
+                      "north",
+                      "northeast",
+                      "east",
+                      "southeast",
+                      "south",
+                      "southwest",
+                      "west",
+                      "northwest",
+                      "attention",
+                      "entropy"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Crop anchor when resizing.",
+                "title": "Gravity"
+              },
+              "height": {
+                "anyOf": [
+                  {
+                    "maximum": 4000,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Height in pixels, max 4000.",
+                "title": "Height"
+              },
+              "page": {
+                "anyOf": [
+                  {
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "PDF page to render as png/jpeg.",
+                "title": "Page"
+              },
+              "preset": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Key of a saved preset, applied instead.",
+                "title": "Preset"
+              },
+              "quality": {
+                "anyOf": [
+                  {
+                    "maximum": 100,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Compression quality, 1-100.",
+                "title": "Quality"
+              },
+              "radius": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "const": "max",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Corner radius in pixels, or 'max' for a circle or pill.",
+                "title": "Radius"
+              },
+              "rotate": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      90,
+                      180,
+                      270
+                    ],
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Rotation in degrees.",
+                "title": "Rotate"
+              },
+              "trim_end": {
+                "anyOf": [
+                  {
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Video trim end, seconds.",
+                "title": "Trim End"
+              },
+              "trim_start": {
+                "anyOf": [
+                  {
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Video trim start, seconds.",
+                "title": "Trim Start"
+              },
+              "video_codec": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "h264",
+                      "vp8",
+                      "vp9",
+                      "hevc"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Video codec.",
+                "title": "Video Codec"
+              },
+              "width": {
+                "anyOf": [
+                  {
+                    "maximum": 4000,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Width in pixels, max 4000.",
+                "title": "Width"
+              }
+            },
+            "title": "TransformInput",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "auto_create_folders": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "False to require the folder path to exist already.",
+            "title": "Auto Create Folders"
+          },
+          "content_base64": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "File content, base64-encoded (20 MB max). Requires filename.",
+            "title": "Content Base64"
+          },
+          "content_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "MIME type; guessed from the filename if omitted.",
+            "title": "Content Type"
+          },
+          "filename": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filename to store, e.g. 'hero.jpg'. Defaults to the path's name.",
+            "title": "Filename"
+          },
+          "folder": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Destination folder slug path, e.g. 'marketing/2026'. Created if missing.",
+            "title": "Folder"
+          },
+          "folder_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "UUID of an existing destination folder.",
+            "title": "Folder Id"
+          },
+          "key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Full object key (folder path + filename). Excludes folder/folder_id.",
+            "title": "Key"
+          },
+          "path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Path of a local file to send. Give this or content_base64, not both.",
+            "title": "Path"
+          },
+          "preset_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Key of a saved preset to apply instead of 'transform'.",
+            "title": "Preset Key"
+          },
+          "transform": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/TransformInput"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Transform to apply. On upload it runs before storage."
+          }
+        },
+        "title": "upload_fileArguments",
+        "type": "object"
+      },
+      "name": "upload_file"
+    }
+  ],
+  "websiteUrl": "https://dreep.cloud"
+}

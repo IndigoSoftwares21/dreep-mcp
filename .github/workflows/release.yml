@@ -58,8 +58,7 @@ jobs:
 
   npm:
     name: Publish to npm
-    # After PyPI: the launcher runs the PyPI package, so it must exist first.
-    needs: pypi
+    needs: build
     runs-on: ubuntu-latest
     environment:
       name: npm
@@ -76,6 +75,7 @@ jobs:
           node-version: "24"
           registry-url: "https://registry.npmjs.org"
       - run: npm install -g npm@latest # trusted publishing needs npm 11.5.1+
+      - run: npm ci
       - run: npm test
       - name: Check whether this version is already on npm
         id: published

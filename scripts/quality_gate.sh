@@ -12,6 +12,9 @@ step() { printf '\n\033[1m==> %s\033[0m\n' "$1"; }
 step "PyPI and npm versions agree"
 "$PY" scripts/check_versions.py
 
+step "Node server's tool contract matches the Python server"
+"$PY" scripts/export_contract.py --check
+
 step "Lint (ruff)"
 "$PY" -m ruff check src tests scripts
 
@@ -27,11 +30,11 @@ step "Types (mypy --strict)"
 step "Tests (pytest, coverage >= 90%)"
 "$PY" -m pytest -q --cov --cov-report=term-missing:skip-covered
 
-step "npm launcher (node --test)"
-if command -v node >/dev/null 2>&1; then
-  node --test npm/test/*.test.js
-else
-  echo "node not found: skipping (CI runs it)."
-fi
+step "Node server (tsc, node --test, coverage >= 90%)"
+(
+  cd npm
+  [ -d node_modules ] || npm ci --silent
+  npm run --silent test:coverage
+)
 
 printf '\n\033[32mQuality gate passed.\033[0m\n'
