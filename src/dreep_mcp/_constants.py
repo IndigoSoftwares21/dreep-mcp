@@ -43,6 +43,10 @@ LOOPBACK_HOSTS: Final = frozenset({"127.0.0.1", "localhost", "::1"})
 MAX_INLINE_BYTES: Final = 20 * 1024 * 1024
 #: Local files larger than this go through a presigned upload automatically.
 PRESIGNED_THRESHOLD_BYTES: Final = 100 * 1024 * 1024
+#: Room in an HTTP request for the JSON-RPC envelope, the tool's other arguments and JSON escaping.
+HTTP_BODY_OVERHEAD_BYTES: Final = 1024 * 1024
+#: Largest HTTP request accepted: base64 turns each started 3 bytes of an inline file into 4.
+MAX_HTTP_BODY_BYTES: Final = (MAX_INLINE_BYTES + 2) // 3 * 4 + HTTP_BODY_OVERHEAD_BYTES
 
 # --------------------------------------------------------------------------- #
 # HTTP auth
