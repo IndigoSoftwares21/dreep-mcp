@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.0]
+
 ### Changed
 
 - The npm package is now a native Node server (Node 20+), built on the `dreep` npm SDK and

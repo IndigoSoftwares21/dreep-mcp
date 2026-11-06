@@ -1,6 +1,6 @@
 {
   "name": "dreep-mcp",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "The official Dreep MCP server: let any AI agent upload, transform, convert, OCR and deliver media.",
   "license": "MIT",
   "type": "module",
