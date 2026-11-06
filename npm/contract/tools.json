@@ -13,7 +13,7 @@
         "openWorldHint": false,
         "readOnlyHint": true
       },
-      "description": "Builds a delivery URL that resizes, crops, converts or otherwise transforms an asset.\n\nTransforms run on the fly at the CDN and are cached. Example: width 400 and\nformat webp for a thumbnail; format pdf to convert a Word document.\n",
+      "description": "Builds a delivery URL that resizes, crops, converts or otherwise transforms an asset.\n\nTransforms run on the fly at the CDN and are cached. Example: width 400 and\nformat webp for a thumbnail; format pdf to convert a Word document.",
       "inputSchema": {
         "$defs": {
           "TransformInput": {
@@ -395,7 +395,7 @@
         "openWorldHint": false,
         "readOnlyHint": true
       },
-      "description": "Builds a time-limited URL for an asset in a signed folder.\n\nNeeds DREEP_SIGNING_SECRET on the server. Anyone holding the link can fetch the\nasset until it expires, so share it only with the intended recipient.\n",
+      "description": "Builds a time-limited URL for an asset in a signed folder.\n\nNeeds DREEP_SIGNING_SECRET on the server. Anyone holding the link can fetch the\nasset until it expires, so share it only with the intended recipient.",
       "inputSchema": {
         "$defs": {
           "TransformInput": {
@@ -791,7 +791,7 @@
         "openWorldHint": true,
         "readOnlyHint": false
       },
-      "description": "Finalises a presigned upload once its bytes are in storage; returns the asset.\n\nA conflict error means the bytes haven't landed yet: retry this call, not the PUT.\n",
+      "description": "Finalises a presigned upload once its bytes are in storage; returns the asset.\n\nA conflict error means the bytes haven't landed yet: retry this call, not the PUT.",
       "inputSchema": {
         "$defs": {
           "TransformInput": {
@@ -1187,7 +1187,7 @@
         "openWorldHint": true,
         "readOnlyHint": false
       },
-      "description": "Converts a document (Word to PDF, PDF to Word, a PDF page to an image...).\n\nStored as a new asset. If `status` is 'processing', the `url` answers 202\nuntil the conversion finishes.\n",
+      "description": "Converts a document (Word to PDF, PDF to Word, a PDF page to an image...).\n\nStored as a new asset. If `status` is 'processing', the `url` answers 202\nuntil the conversion finishes.",
       "inputSchema": {
         "properties": {
           "auto_create_folders": {
@@ -1329,7 +1329,7 @@
         "openWorldHint": true,
         "readOnlyHint": false
       },
-      "description": "Creates a folder. Uploads create folders on demand, so this is mainly for\nsetting access control before anything lands.\n\nAccess control can only be set on a top-level folder (name, no parent);\nnested folders inherit it. Folders cannot be deleted through the API.\n",
+      "description": "Creates a folder. Uploads create folders on demand, so this is mainly for\nsetting access control before anything lands.\n\nAccess control can only be set on a top-level folder (name, no parent);\nnested folders inherit it. Folders cannot be deleted through the API.",
       "inputSchema": {
         "properties": {
           "access_control_type": {
@@ -1813,7 +1813,7 @@
         "openWorldHint": true,
         "readOnlyHint": false
       },
-      "description": "Starts a direct-to-storage upload for bytes this server can't read.\n\nPUT the file to `upload_url` with exactly this Content-Type and Content-Length\n(valid about ten minutes), then call confirm_upload with the returned `id`.\nIf `already_exists` is true, skip the PUT and confirm straight away.\n",
+      "description": "Starts a direct-to-storage upload for bytes this server can't read.\n\nPUT the file to `upload_url` with exactly this Content-Type and Content-Length\n(valid about ten minutes), then call confirm_upload with the returned `id`.\nIf `already_exists` is true, skip the PUT and confirm straight away.",
       "inputSchema": {
         "properties": {
           "auto_create_folders": {
@@ -1922,7 +1922,7 @@
         "openWorldHint": true,
         "readOnlyHint": false
       },
-      "description": "Permanently deletes an asset and every cached transform of it.\n\nImmediate and irreversible: URLs already handed out, signed ones included,\nstop working. Confirm with the user first.\n",
+      "description": "Permanently deletes an asset and every cached transform of it.\n\nImmediate and irreversible: URLs already handed out, signed ones included,\nstop working. Confirm with the user first.",
       "inputSchema": {
         "properties": {
           "media_id": {
@@ -2134,7 +2134,7 @@
         "openWorldHint": true,
         "readOnlyHint": true
       },
-      "description": "Lists ready assets, newest first, with `pagination.total` across all pages.\n\nEach asset has `id`, `url`, `filename`, `mimetype`, `size_bytes` and `folder`.\nThere is no text search: page through and filter by filename or folder.\n",
+      "description": "Lists ready assets, newest first, with `pagination.total` across all pages.\n\nEach asset has `id`, `url`, `filename`, `mimetype`, `size_bytes` and `folder`.\nThere is no text search: page through and filter by filename or folder.",
       "inputSchema": {
         "properties": {
           "folder": {
@@ -2230,7 +2230,7 @@
         "openWorldHint": true,
         "readOnlyHint": false
       },
-      "description": "Cuts the subject out of an image and stores the transparent cutout.\n\nTo show it on a colour, build a delivery URL with transform `bg`, e.g. 'ffffff'.\n",
+      "description": "Cuts the subject out of an image and stores the transparent cutout.\n\nTo show it on a colour, build a delivery URL with transform `bg`, e.g. 'ffffff'.",
       "inputSchema": {
         "properties": {
           "auto_create_folders": {
@@ -2341,7 +2341,7 @@
         "openWorldHint": true,
         "readOnlyHint": false
       },
-      "description": "Uploads an image, video, audio file or document to Dreep and returns the asset.\n\nThe result's `url` is the ready-to-use delivery URL. Files over 100 MB stream\nstraight to storage through a presigned upload. A transform given here is\napplied before storage and replaces the original.\n",
+      "description": "Uploads an image, video, audio file or document to Dreep and returns the asset.\n\nThe result's `url` is the ready-to-use delivery URL. Files over 100 MB stream\nstraight to storage through a presigned upload. A transform given here is\napplied before storage and replaces the original.",
       "inputSchema": {
         "$defs": {
           "TransformInput": {

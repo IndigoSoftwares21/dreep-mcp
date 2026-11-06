@@ -10,6 +10,7 @@ schemas and annotations. The Node server only implements the handlers.
 from __future__ import annotations
 
 import asyncio
+import inspect
 import json
 import sys
 from pathlib import Path
@@ -45,7 +46,8 @@ async def build_contract() -> dict[str, Any]:
         "tools": [
             {
                 "name": tool.name,
-                "description": tool.description,
+                # Python 3.13+ strips docstring indentation; older versions keep it.
+                "description": inspect.cleandoc(tool.description or ""),
                 "inputSchema": tool.input_schema,
                 "annotations": (
                     tool.annotations.model_dump(by_alias=True, exclude_none=True)
