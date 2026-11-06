@@ -1,4 +1,4 @@
-"""The Python package and the npm launcher must carry the same version.
+"""The Python package and the Node server must carry the same version.
 
     python scripts/check_versions.py            # versions agree
     python scripts/check_versions.py v1.2.3     # ...and match this release tag

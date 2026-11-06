@@ -19,8 +19,8 @@ Security fixes are released for the latest minor version.
 ## How the server protects your project
 
 - The Dreep API key stays in the server's environment. It is sent only to the Dreep API
-  (by the [`dreep` SDK](https://github.com/IndigoSoftwares21/dreep-python)) and never
-  appears in tool results.
+  (by the Dreep SDK) and never appears in tool results. Presigned storage uploads are
+  sent without it.
 - Delete tools are not registered unless `DREEP_MCP_ALLOW_DELETE` is set, and are
   annotated as destructive so clients ask before running them.
 - File tools only read beneath `DREEP_MCP_FILE_ROOTS` when it is set. Over the HTTP
@@ -28,5 +28,7 @@ Security fixes are released for the latest minor version.
   read the host's files.
 - The HTTP transport binds to `127.0.0.1` by default, refuses a non-loopback address
   without `DREEP_MCP_HTTP_TOKEN`, and compares bearer tokens in constant time.
-- Asset ids are validated by the SDK before they are put in a request path, so an id
-  can't redirect a call to another endpoint.
+- Asset ids are validated before they are put in a request path, so an id can't redirect
+  a call to another endpoint.
+- The Node HTTP server also refuses other `Host` headers when bound to loopback (DNS
+  rebinding), and refuses oversized request bodies.

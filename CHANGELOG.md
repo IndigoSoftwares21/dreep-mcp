@@ -6,6 +6,14 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- The npm package is now a native Node server (Node 20+), built on the `dreep` npm SDK and
+  the official MCP TypeScript SDK. `npx -y dreep-mcp` no longer needs uv, pipx or Python.
+  It serves the same tools as the Python server, from a contract generated from it. The one
+  difference: `extract_text` has no `include_blocks` option yet, because the Node SDK can't
+  send it.
+
 ### Fixed
 
 - The HTTP transport now accepts inline files up to the advertised 20 MB. It was using the MCP

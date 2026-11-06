@@ -1,22 +1,38 @@
 {
   "name": "dreep-mcp",
   "version": "0.1.1",
-  "description": "The official Dreep MCP server, for npx. Launches the Python package dreep-mcp through uv or pipx.",
+  "description": "The official Dreep MCP server: let any AI agent upload, transform, convert, OCR and deliver media.",
   "license": "MIT",
   "type": "module",
   "bin": {
-    "dreep-mcp": "bin/dreep-mcp.js"
+    "dreep-mcp": "dist/bin.js"
   },
   "files": [
-    "bin",
-    "lib",
+    "dist",
+    "contract",
     "README.md"
   ],
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "scripts": {
-    "test": "node --test test/*.test.js"
+    "build": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\" && tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "pretest": "node -e \"require('node:fs').rmSync('build',{recursive:true,force:true})\" && tsc -p tsconfig.json",
+    "test": "node --test build/test/*.test.js",
+    "test:coverage": "npm run pretest && node --test --experimental-test-coverage --test-coverage-lines=90 --test-coverage-include=build/src/** --test-coverage-exclude=build/src/bin.js build/test/*.test.js",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "ajv": "^8.20.0",
+    "dreep": "^0.2.0",
+    "mime-types": "^3.0.2"
+  },
+  "devDependencies": {
+    "@types/mime-types": "^3.0.1",
+    "@types/node": "^26.2.0",
+    "typescript": "^7.0.2"
   },
   "keywords": [
     "dreep",

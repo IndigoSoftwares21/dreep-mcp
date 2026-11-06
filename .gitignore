@@ -25,3 +25,7 @@ htmlcov/
 # Node
 node_modules/
 *.tgz
+
+# Node build output
+npm/dist/
+npm/build/

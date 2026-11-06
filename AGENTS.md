@@ -38,8 +38,20 @@ src/dreep_mcp/
   # entry layer: the only code that runs an event loop or builds a client
   _cli.py                  argparse, stdio and streamable-HTTP transports
 
-npm/                       npx launcher: runs the PyPI package via uvx or pipx
+npm/                       the native Node server (TypeScript, Node 20+)
+  contract/tools.json      GENERATED from the Python server: never edit by hand
+  src/contract.ts          loads the contract; the Node server serves it as is
+  src/registry.ts          validates arguments, dispatches, maps every error
+  src/tools*.ts            one handler per tool, on the `dreep` npm SDK
+  src/server.ts            the MCP server over the registry
+  src/httpServer.ts        streamable HTTP: bearer token, Host check, body limit
+  src/cli.ts, src/bin.ts   the command; the only code that builds a client
 ```
+
+**Two servers, one contract.** The Python server is the source of truth for tool
+names, descriptions, input schemas, annotations and limits.
+`scripts/export_contract.py` writes them to `npm/contract/tools.json`, and the
+gate fails if that file is stale. The Node server only implements handlers.
 
 A tool call flows: MCP client → `MCPServer` validates arguments against the
 schema → tool function → `resolve_file` (if it takes a file) → SDK call wrapped
@@ -47,8 +59,10 @@ in `run(...)` → `to_result` → structured JSON back to the agent.
 
 ## Hard rules
 
-1. **Build on the `dreep` SDK.** Tools call `AsyncDreep`; they never speak HTTP
-   to the Dreep API. A missing capability goes into the SDK first.
+1. **Build on the Dreep SDKs.** Tools call `AsyncDreep` (Python) or `Dreep`
+   (Node); they never speak HTTP to the Dreep API. A missing capability goes into
+   the SDK first. Where the Node SDK differs from the API reference, the handler
+   works around it and says why in a comment (see `build_signed_url`, `safeId`).
 2. **Follow the API reference, verified live.** Signed URLs sign `"{id}:{exp}"`
    only; presets need `format`; access control is top-level only; there is no
    folder delete; fetching text via the delivery URL (`format=txt`) 404s, so OCR
@@ -74,7 +88,13 @@ in `run(...)` → `to_result` → structured JSON back to the agent.
     against an `httpx.MockTransport`; coverage floor is 90%.
 12. **Never commit secrets.** API keys, signing secrets and HTTP tokens come
     from the environment only. Live testing uses a key passed by env var.
-13. **Versions move together.** `src/dreep_mcp/_version.py` and
+13. **A tool change lands in both servers.** Change the Python tool, run
+    `python scripts/export_contract.py`, then update the handler in `npm/src/`.
+    The Node tests fail on a contract tool with no handler. A parameter the Node
+    SDK can't support goes in `UNSUPPORTED_PARAMS` in `npm/src/constants.ts`.
+14. **Stdout is the stdio transport.** Neither server may write anything else
+    to it; logs go to stderr.
+15. **Versions move together.** `src/dreep_mcp/_version.py` and
     `npm/package.json` always carry the same version; the release workflow
     refuses a tag that matches neither.
 

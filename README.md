@@ -52,40 +52,34 @@ Ask your agent things like:
 ```mermaid
 flowchart LR
     A["AI agent<br/>(Claude, Cursor, Codex...)"] -- "MCP<br/>stdio or HTTP" --> S["dreep-mcp"]
-    S -- "dreep Python SDK<br/>(your API key)" --> API["Dreep API"]
+    S -- "dreep SDK<br/>(your API key)" --> API["Dreep API"]
     API --> CDN["Dreep CDN<br/>(or your custom domain)"]
     S -. "URL building:<br/>no network" .-> CDN
 ```
 
 1. Your MCP client starts `dreep-mcp` on your machine (stdio), or connects to one you host (streamable HTTP).
 2. The agent sees 14 tools (16 with deletes enabled), each with a typed JSON schema that lists every valid transform value, so it calls them correctly the first time.
-3. Each tool calls the official [`dreep` Python SDK](https://github.com/IndigoSoftwares21/dreep-python), which talks to the Dreep API with your key. Delivery and signed URLs are built locally, with no API call.
+3. Each tool calls the official Dreep SDK ([Node](https://github.com/IndigoSoftwares21/dreep-js) or [Python](https://github.com/IndigoSoftwares21/dreep-python)), which talks to the Dreep API with your key. Delivery and signed URLs are built locally, with no API call.
 4. Results come back as structured JSON. Every asset carries the delivery `url` exactly as Dreep returned it, custom CDN domain included.
 
-There is one implementation, in Python. The npm package `dreep-mcp` is a small launcher that runs the same PyPI package through `uvx` (or `pipx`), so `npx` users get the identical server.
+There are two native servers, one for Node and one for Python, so you only need the runtime you already have. They expose the same tools: the Python server exports its tool names, descriptions and input schemas to [`npm/contract/tools.json`](npm/contract/tools.json), the Node server serves that file, and CI fails if it goes stale. The [one known difference](#tools) comes from the Node SDK.
 
 ## Quick start
 
 1. Create an API key on the **API Keys** page of the [Dreep dashboard](https://dreep.cloud).
-2. Install [uv](https://docs.astral.sh/uv/getting-started/installation/), which runs the server with no separate install step:
-
-   ```bash
-   curl -LsSf https://astral.sh/uv/install.sh | sh
-   ```
-
-3. Add the server to your client (below). Any of these three commands starts the same server:
+2. Add the server to your client (below). Pick whichever runtime you already have:
 
    | Runner | Command | Needs |
    | :- | :- | :- |
-   | **uvx** (recommended) | `uvx dreep-mcp` | [uv](https://docs.astral.sh/uv/) |
-   | **npx** | `npx -y dreep-mcp` | Node 18+ plus uv or pipx |
+   | **npx** | `npx -y dreep-mcp` | Node 20+ |
+   | **uvx** | `uvx dreep-mcp` | [uv](https://docs.astral.sh/uv/) |
    | **pip** | `pip install dreep-mcp`, then `dreep-mcp` | Python 3.10+ |
 
-   The examples below use `uvx`. To use npx instead, swap `"command": "uvx", "args": ["dreep-mcp"]` for `"command": "npx", "args": ["-y", "dreep-mcp"]`.
+   The examples below use `npx`. To use uvx instead, swap `"command": "npx", "args": ["-y", "dreep-mcp"]` for `"command": "uvx", "args": ["dreep-mcp"]`.
 
 ## Add it to your client
 
-Every client needs the same three things: a command (`uvx`), its arguments (`dreep-mcp`), and your API key in the `DREEP_API_KEY` environment variable. Replace `drp_live_your_key` with your key. Add `DREEP_SIGNING_SECRET` if you use signed folders, and `DREEP_MCP_ALLOW_DELETE` if you want the delete tools (see [Configuration](#configuration)).
+Every client needs the same three things: a command (`npx`), its arguments (`-y dreep-mcp`), and your API key in the `DREEP_API_KEY` environment variable. Replace `drp_live_your_key` with your key. Add `DREEP_SIGNING_SECRET` if you use signed folders, and `DREEP_MCP_ALLOW_DELETE` if you want the delete tools (see [Configuration](#configuration)).
 
 ### Claude Desktop
 
@@ -98,8 +92,8 @@ Open **Settings → Developer → Edit Config**, which opens `claude_desktop_con
 {
   "mcpServers": {
     "dreep": {
-      "command": "uvx",
-      "args": ["dreep-mcp"],
+      "command": "npx",
+      "args": ["-y", "dreep-mcp"],
       "env": {
         "DREEP_API_KEY": "drp_live_your_key",
         "DREEP_SIGNING_SECRET": "your_signing_secret"
@@ -111,12 +105,12 @@ Open **Settings → Developer → Edit Config**, which opens `claude_desktop_con
 
 Restart Claude Desktop. **Dreep** appears under the tools (slider) icon in the message box.
 
-> If Claude Desktop can't find `uvx`, use its full path (run `which uvx`, for example `/Users/you/.local/bin/uvx`). GUI apps don't always inherit your shell's `PATH`.
+> If Claude Desktop can't find `npx`, use its full path (run `which npx`). GUI apps don't always inherit your shell's `PATH`, which is common with nvm.
 
 ### Claude Code
 
 ```bash
-claude mcp add dreep --scope user -e DREEP_API_KEY=drp_live_your_key -- uvx dreep-mcp
+claude mcp add dreep --scope user -e DREEP_API_KEY=drp_live_your_key -- npx -y dreep-mcp
 ```
 
 `--scope user` makes it available in every project; leave it out to add it to the current project only, or use `--scope project` to share it with your team through `.mcp.json` (keep the key out of that file, as shown below). Check it with `claude mcp list`, or `/mcp` inside a session.
@@ -127,8 +121,8 @@ To share the setup in a repository without committing the key, put this in `.mcp
 {
   "mcpServers": {
     "dreep": {
-      "command": "uvx",
-      "args": ["dreep-mcp"],
+      "command": "npx",
+      "args": ["-y", "dreep-mcp"],
       "env": { "DREEP_API_KEY": "${DREEP_API_KEY}" }
     }
   }
@@ -143,8 +137,8 @@ Open **Cursor Settings → MCP → Add new MCP server**, or edit `~/.cursor/mcp.
 {
   "mcpServers": {
     "dreep": {
-      "command": "uvx",
-      "args": ["dreep-mcp"],
+      "command": "npx",
+      "args": ["-y", "dreep-mcp"],
       "env": { "DREEP_API_KEY": "drp_live_your_key" }
     }
   }
@@ -170,8 +164,8 @@ Create `.vscode/mcp.json`. VS Code asks for the key the first time and stores it
   "servers": {
     "dreep": {
       "type": "stdio",
-      "command": "uvx",
-      "args": ["dreep-mcp"],
+      "command": "npx",
+      "args": ["-y", "dreep-mcp"],
       "env": { "DREEP_API_KEY": "${input:dreep-api-key}" }
     }
   }
@@ -188,8 +182,8 @@ Open **Windsurf Settings → Cascade → MCP Servers → View raw config**, or e
 {
   "mcpServers": {
     "dreep": {
-      "command": "uvx",
-      "args": ["dreep-mcp"],
+      "command": "npx",
+      "args": ["-y", "dreep-mcp"],
       "env": { "DREEP_API_KEY": "drp_live_your_key" }
     }
   }
@@ -202,8 +196,8 @@ Add to `~/.codex/config.toml`:
 
 ```toml
 [mcp_servers.dreep]
-command = "uvx"
-args = ["dreep-mcp"]
+command = "npx"
+args = ["-y", "dreep-mcp"]
 env = { DREEP_API_KEY = "drp_live_your_key" }
 ```
 
@@ -215,8 +209,8 @@ Add to `~/.gemini/settings.json` (or `.gemini/settings.json` in a project):
 {
   "mcpServers": {
     "dreep": {
-      "command": "uvx",
-      "args": ["dreep-mcp"],
+      "command": "npx",
+      "args": ["-y", "dreep-mcp"],
       "env": { "DREEP_API_KEY": "drp_live_your_key" }
     }
   }
@@ -231,8 +225,8 @@ Add to Zed's `settings.json` (**Zed → Settings → Open Settings**):
 {
   "context_servers": {
     "dreep": {
-      "command": "uvx",
-      "args": ["dreep-mcp"],
+      "command": "npx",
+      "args": ["-y", "dreep-mcp"],
       "env": { "DREEP_API_KEY": "drp_live_your_key" }
     }
   }
@@ -241,7 +235,7 @@ Add to Zed's `settings.json` (**Zed → Settings → Open Settings**):
 
 ### Cline and other clients
 
-Cline (**MCP Servers → Configure**), Roo Code, Continue, Goose, JetBrains AI Assistant, LM Studio and most other clients take the same `mcpServers` block shown for [Cursor](#cursor). Anything that can launch a stdio MCP server can run `uvx dreep-mcp` with `DREEP_API_KEY` set.
+Cline (**MCP Servers → Configure**), Roo Code, Continue, Goose, JetBrains AI Assistant, LM Studio and most other clients take the same `mcpServers` block shown for [Cursor](#cursor). Anything that can launch a stdio MCP server can run `npx -y dreep-mcp` with `DREEP_API_KEY` set.
 
 ### Remote clients over HTTP
 
@@ -250,7 +244,7 @@ For web-based agents, shared team servers or containers, run the streamable HTTP
 ```bash
 export DREEP_API_KEY=drp_live_your_key
 export DREEP_MCP_HTTP_TOKEN="$(openssl rand -hex 32)"
-uvx dreep-mcp --transport http --host 0.0.0.0 --port 8000
+npx -y dreep-mcp --transport http --host 0.0.0.0 --port 8000
 ```
 
 The endpoint is `http://<host>:8000/mcp`, and every request must send `Authorization: Bearer <DREEP_MCP_HTTP_TOKEN>`. Put it behind HTTPS (a reverse proxy or your platform's load balancer) before exposing it. Then connect, for example from Claude Code:
@@ -270,7 +264,7 @@ Without `--host` it binds to `127.0.0.1`, and it refuses to bind to any other ad
 | `confirm_upload` | Finalises a presigned upload and returns the asset. | writes |
 | `list_media` | Lists assets with pagination, filtered by folder. | read-only |
 | `remove_background` | Cuts the subject out of an image and stores a transparent PNG or WebP. | writes |
-| `extract_text` | OCR for images and PDFs, optionally with line blocks and bounding boxes. | writes |
+| `extract_text` | OCR for images and PDFs. On the Python server, optionally with line blocks and bounding boxes (`include_blocks`). | writes |
 | `convert_document` | Word ↔ PDF, Excel, PowerPoint, CSV, or a PDF page to PNG/JPEG. | writes |
 | `build_delivery_url` | Resize, crop, convert, compress, blur, round or trim an asset at the CDN. | local, no network |
 | `build_signed_url` | A time-limited link for an asset in a signed folder. | local, no network |
@@ -330,7 +324,7 @@ Report vulnerabilities privately; see [SECURITY.md](SECURITY.md).
 git clone https://github.com/IndigoSoftwares21/dreep-mcp.git
 cd dreep-mcp
 bash scripts/setup_hooks.sh      # venv, dev dependencies, git hooks
-bash scripts/quality_gate.sh     # lint, format, repository rules, mypy --strict, tests, npm tests
+bash scripts/quality_gate.sh     # lint, format, repository rules, mypy --strict, Python and Node tests
 ```
 
 Try your local checkout in a client by pointing it at the venv: `"command": "/path/to/dreep-mcp/.venv/bin/dreep-mcp"`. To poke at the tools interactively, run the [MCP Inspector](https://github.com/modelcontextprotocol/inspector):
@@ -343,11 +337,11 @@ The layout:
 
 | Path | What lives there |
 | :- | :- |
-| `src/dreep_mcp/_tools_*.py` | One module per tool group: uploads, media, processing, URLs, project |
-| `src/dreep_mcp/_server.py` | Builds the server and registers every tool group |
-| `src/dreep_mcp/_cli.py` | The `dreep-mcp` command and both transports |
-| `src/dreep_mcp/_params.py`, `_transform_input.py` | The schemas the agent reads |
-| `npm/` | The `npx` launcher |
+| `src/dreep_mcp/_tools_*.py` | The Python server: one module per tool group |
+| `src/dreep_mcp/_params.py`, `_transform_input.py` | The schemas the agent reads, for both servers |
+| `src/dreep_mcp/_cli.py` | The Python command and both transports |
+| `npm/src/tools*.ts` | The Node server: the same tool groups |
+| `npm/contract/tools.json` | Generated tool contract the Node server serves (`scripts/export_contract.py`) |
 | `scripts/rules/` | Repository rules: file length, no magic strings, DRY, layering, security |
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request, and [AGENTS.md](AGENTS.md) if you're an AI agent working in this repository.
