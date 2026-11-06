@@ -1,6 +1,6 @@
 {
   "name": "dreep-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "The official Dreep MCP server, for npx. Launches the Python package dreep-mcp through uv or pipx.",
   "license": "MIT",
   "type": "module",
