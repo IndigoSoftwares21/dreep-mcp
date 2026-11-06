@@ -4,5 +4,5 @@ contact_links:
     url: https://docs.dreep.cloud
     about: Questions about the Dreep API itself, rather than this MCP server.
   - name: Report a security vulnerability
-    url: https://github.com/abetoluwani/dreep-mcp/security/advisories/new
+    url: https://github.com/IndigoSoftwares21/dreep-mcp/security/advisories/new
     about: Please report security problems privately, never in a public issue.

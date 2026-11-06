@@ -3,7 +3,7 @@
 ## Reporting a vulnerability
 
 **Please don't report security problems in public issues.** Use GitHub's
-[private vulnerability reporting](https://github.com/abetoluwani/dreep-mcp/security/advisories/new)
+[private vulnerability reporting](https://github.com/IndigoSoftwares21/dreep-mcp/security/advisories/new)
 instead. The maintainers, Abe Toluwani ([abetoluwani](https://github.com/abetoluwani)) and
 Indigo ([IndigoSoftwares21](https://github.com/IndigoSoftwares21)), will acknowledge
 your report, investigate it, and keep you updated until it is fixed.

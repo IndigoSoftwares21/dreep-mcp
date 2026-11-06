@@ -13,7 +13,7 @@ videos and documents from Claude, Cursor, VS Code, Codex, Gemini and every other
 
 [![PyPI](https://img.shields.io/pypi/v/dreep-mcp?color=CB1C85&label=pypi&logo=pypi&logoColor=white&cacheSeconds=3600)](https://pypi.org/project/dreep-mcp/)
 [![npm](https://img.shields.io/npm/v/dreep-mcp?color=4A063A&label=npm&logo=npm&logoColor=white&cacheSeconds=3600)](https://www.npmjs.com/package/dreep-mcp)
-[![CI](https://github.com/abetoluwani/dreep-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/abetoluwani/dreep-mcp/actions/workflows/ci.yml)
+[![CI](https://github.com/IndigoSoftwares21/dreep-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/IndigoSoftwares21/dreep-mcp/actions/workflows/ci.yml)
 [![MCP](https://img.shields.io/badge/MCP-stdio%20%7C%20streamable%20HTTP-CB1C85)](https://modelcontextprotocol.io)
 [![License: MIT](https://img.shields.io/badge/license-MIT-4A063A)](LICENSE)
 
@@ -21,7 +21,7 @@ videos and documents from Claude, Cursor, VS Code, Codex, Gemini and every other
 [API reference](https://docs.dreep.cloud/api-reference/upload/upload-media) ·
 [Python SDK](https://github.com/IndigoSoftwares21/dreep-python) ·
 [Changelog](CHANGELOG.md) ·
-[Report a bug](https://github.com/abetoluwani/dreep-mcp/issues/new?template=bug_report.yml)
+[Report a bug](https://github.com/IndigoSoftwares21/dreep-mcp/issues/new?template=bug_report.yml)
 
 </div>
 
@@ -327,7 +327,7 @@ Report vulnerabilities privately; see [SECURITY.md](SECURITY.md).
 ## Development
 
 ```bash
-git clone https://github.com/abetoluwani/dreep-mcp.git
+git clone https://github.com/IndigoSoftwares21/dreep-mcp.git
 cd dreep-mcp
 bash scripts/setup_hooks.sh      # venv, dev dependencies, git hooks
 bash scripts/quality_gate.sh     # lint, format, repository rules, mypy --strict, tests, npm tests
