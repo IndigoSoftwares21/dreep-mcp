@@ -49,7 +49,9 @@ def build_parser() -> argparse.ArgumentParser:
 
 def http_app(server: MCPServer, settings: Settings, *, host: str, path: str) -> ASGIApp:
     """The streamable-HTTP ASGI app, behind the bearer-token guard when one is set."""
-    app: ASGIApp = server.streamable_http_app(streamable_http_path=path, host=host)
+    app: ASGIApp = server.streamable_http_app(
+        streamable_http_path=path, host=host, max_request_body_size=c.MAX_HTTP_BODY_BYTES
+    )
     return BearerTokenMiddleware(app, settings.http_token) if settings.http_token else app
 
 

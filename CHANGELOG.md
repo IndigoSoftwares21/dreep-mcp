@@ -14,6 +14,11 @@ All notable changes to this project are documented here. The format follows
   difference: `extract_text` has no `include_blocks` option yet, because the Node SDK can't
   send it.
 
+### Fixed
+
+- The HTTP transport now accepts inline files up to the advertised 20 MB. It was using the MCP
+  SDK's default 4 MiB request limit, which refused `content_base64` above about 3 MiB.
+
 ## [0.1.0]
 
 ### Added
